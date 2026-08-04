@@ -9,6 +9,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 
 import { createRecords, listRecords } from '@/lib/airtable'
+import { anthropicError } from '@/lib/anthropic-errors'
 import { HOLDINGS, LOTS, ORDERS, readText } from '@/lib/airtable-schema'
 import { errorResponse, HttpError } from '@/lib/http-error'
 
@@ -213,29 +214,35 @@ async function parse(request: Request): Promise<Response> {
           },
         }
 
-  const message = await anthropic().messages.create({
-    model: 'claude-opus-5',
-    max_tokens: 16000,
-    // Extraction is well-specified, so the deeper reasoning tiers buy nothing
-    // here — they only add latency to a person waiting on an upload.
-    output_config: {
-      effort: 'medium',
-      format: { type: 'json_schema', schema: TRADE_SCHEMA },
-    },
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          block,
-          {
-            type: 'text',
-            text: 'Extract every trade from this confirmation.',
-          },
-        ],
+  let message
+  try {
+    message = await anthropic().messages.create({
+      model: 'claude-opus-5',
+      max_tokens: 16000,
+      // Extraction is well-specified, so the deeper reasoning tiers buy nothing
+      // here — they only add latency to a person waiting on an upload.
+      output_config: {
+        effort: 'medium',
+        format: { type: 'json_schema', schema: TRADE_SCHEMA },
       },
-    ],
-  })
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            block,
+            {
+              type: 'text',
+              text: 'Extract every trade from this confirmation.',
+            },
+          ],
+        },
+      ],
+    })
+  } catch (error) {
+    if (error instanceof HttpError) throw error
+    throw anthropicError(error, 'Reading the confirmation')
+  }
 
   // Safety classifiers answer with HTTP 200 and stop_reason "refusal", so this
   // has to be checked before touching content.

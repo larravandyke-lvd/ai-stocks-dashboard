@@ -8,6 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 
 import { listRecords, updateRecord } from '@/lib/airtable'
+import { anthropicError } from '@/lib/anthropic-errors'
 import { HOLDINGS } from '@/lib/airtable-schema'
 import { formatDate, marketDate } from '@/lib/dates'
 import { fetchNews, tryFetch } from '@/lib/finnhub'
@@ -173,13 +174,20 @@ export async function POST(request: Request) {
       .filter((line) => line !== null)
       .join('\n')
 
-    const message = await anthropic().messages.create({
-      model: 'claude-opus-5',
-      max_tokens: 16000,
-      output_config: { effort: 'medium' },
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: facts }],
-    })
+    let message
+    try {
+      message = await anthropic().messages.create({
+        model: 'claude-opus-5',
+        max_tokens: 16000,
+        output_config: { effort: 'medium' },
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: facts }],
+      })
+    } catch (error) {
+      // Rethrow our own 503 for a missing key untouched; map SDK errors.
+      if (error instanceof HttpError) throw error
+      throw anthropicError(error, 'Generating the read')
+    }
 
     if (message.stop_reason === 'refusal') {
       throw new HttpError('The position read could not be generated.', 422)
