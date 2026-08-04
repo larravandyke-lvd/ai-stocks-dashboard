@@ -37,6 +37,8 @@ export type Holding = {
   accounts: string[]
   positionSizeTier: string | null
   investmentThesis: string
+  positionRead: string
+  positionReadAt: string
   totalShares: number
   totalCostBasis: number
   avgCostPerShare: number | null
@@ -214,6 +216,8 @@ function mapHolding(record: AirtableRecord, quote: Quote | undefined): Holding {
     accounts: readArray(f[HOLDINGS.account]),
     positionSizeTier: readSelect(f[HOLDINGS.positionSizeTier]),
     investmentThesis: readText(f[HOLDINGS.investmentThesis]),
+    positionRead: readText(f[HOLDINGS.positionRead]),
+    positionReadAt: readText(f[HOLDINGS.positionReadAt]),
     totalShares,
     totalCostBasis,
     avgCostPerShare:

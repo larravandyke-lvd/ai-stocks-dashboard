@@ -41,6 +41,11 @@ export const HOLDINGS = {
   unrealizedPlPct: 'fldZGnbdvGEjeqYV1',
   portfolioSummary: 'fldQseY0whDWjOuaK',
   investmentThesis: 'fldKWQ0mRqOerWDpB',
+  // Cache for the generated position read. Stored in Airtable rather than in
+  // process memory so it survives cold starts and is shared across serverless
+  // instances — an in-memory cache would regenerate on nearly every visit.
+  positionRead: 'fldhx9EsA6j1gCuwD',
+  positionReadAt: 'fldJjPB3QzgnL8XIW',
 } as const
 
 export const LOTS = {

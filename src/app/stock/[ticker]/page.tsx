@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { LineChart, RecommendationBar, type LotMarker, type Series } from '@/components/charts'
+import PositionRead from '@/components/PositionRead'
+import ThesisEditor from '@/components/ThesisEditor'
 import { airtableConfigured } from '@/lib/airtable'
 import { daysBetween, formatDate, marketDate } from '@/lib/dates'
 import {
@@ -71,8 +73,9 @@ export default async function StockPage({
         .map((lot) => ({
           date:
             firstBar && lot.purchaseDate < firstBar ? firstBar : lot.purchaseDate,
+          actualDate: lot.purchaseDate,
           price: lot.pricePerShare,
-          label: `${fmtShares(lot.shares)}`,
+          shares: lot.shares,
         }))
     : []
 
@@ -183,22 +186,28 @@ export default async function StockPage({
         </div>
       </div>
 
-      {holding.investmentThesis ? (
-        <div className="card">
-          <h2>Investment thesis</h2>
-          <p className="thesis">{holding.investmentThesis}</p>
-        </div>
-      ) : (
-        <div className="card">
-          <h2>Investment thesis</h2>
-          <p className="card-note">
-            Nothing written yet. Add one in the Airtable{' '}
-            <strong>Investment Thesis</strong> field on Holdings — why you bought
-            it, and what would change your mind — and it will show here next to
-            how the position has actually done.
-          </p>
-        </div>
-      )}
+      <div className="card">
+        <h2>
+          Position read
+          <span className="editable-hint">generated · cached for 24h</span>
+        </h2>
+        <PositionRead
+          ticker={holding.ticker}
+          initial={holding.positionRead}
+          initialAt={holding.positionReadAt}
+        />
+      </div>
+
+      <div className="card" style={{ marginTop: 18 }}>
+        <h2>
+          Investment thesis
+          <span className="editable-hint">yours · editable</span>
+        </h2>
+        <ThesisEditor
+          ticker={holding.ticker}
+          initial={holding.investmentThesis}
+        />
+      </div>
 
       <div className="card" style={{ marginTop: 18 }}>
         <h2>

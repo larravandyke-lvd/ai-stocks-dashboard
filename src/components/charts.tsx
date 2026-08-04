@@ -12,7 +12,15 @@
 //     never carried by colour alone
 //   - value text uses ink tokens, never the series colour
 
+import Link from 'next/link'
+
 import { formatDate } from '@/lib/dates'
+import {
+  money,
+  moneyCompact,
+  shares as formatShares,
+  signedPercent,
+} from '@/lib/format'
 
 export type Series = {
   name: string
@@ -22,9 +30,12 @@ export type Series = {
 }
 
 export type LotMarker = {
+  /** Where the marker is drawn. Clamped to the first bar for pre-chart lots. */
   date: string
+  /** The real purchase date, shown on hover. May differ from `date` above. */
+  actualDate: string
   price: number
-  label: string
+  shares: number
 }
 
 const W = 720
@@ -248,7 +259,7 @@ export function LineChart({
                 y={y - 11}
                 textAnchor="middle"
               >
-                {marker.label}
+                {formatShares(marker.shares)}
               </text>
             </g>
           )
@@ -328,8 +339,232 @@ export function LineChart({
             </g>
           )
         })}
+
+        {/* Lot hover targets render LAST so they sit above the date bands —
+            SVG paints in document order, and an earlier band would otherwise
+            swallow the pointer before it reached the marker. */}
+        {markers.map((marker, i) => {
+          const x = xFor(marker.date)
+          const y = yFor(marker.price)
+          const tipW = 132
+          const tipH = 56
+          const flip = x > PAD.left + PLOT_W * 0.6
+          const tipX = flip ? x - tipW - 12 : x + 12
+          const tipY = Math.max(PAD.top + 2, Math.min(y - tipH / 2, PAD.top + PLOT_H - tipH))
+
+          return (
+            <g className="hover-slot" key={`lot-hover-${marker.actualDate}-${i}`}>
+              {/* Invisible target, deliberately larger than the 11px triangle
+                  so the marker is reachable without pixel-hunting. */}
+              <circle className="hover-band" cx={x} cy={y} r={14} />
+              <g className="hover-group">
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={7}
+                  fill="none"
+                  stroke="var(--text-primary)"
+                  strokeWidth={1.5}
+                />
+                <rect
+                  className="tip-box"
+                  x={tipX}
+                  y={tipY}
+                  width={tipW}
+                  height={tipH}
+                  rx={6}
+                />
+                <text className="tip-muted" x={tipX + 10} y={tipY + 16}>
+                  Bought {formatDate(marker.actualDate)}
+                </text>
+                <text className="tip-text" x={tipX + 10} y={tipY + 33}>
+                  {formatShares(marker.shares)} sh @ {money(marker.price)}
+                </text>
+                <text className="tip-muted" x={tipX + 10} y={tipY + 48}>
+                  {money(marker.shares * marker.price)} cost
+                </text>
+              </g>
+            </g>
+          )
+        })}
       </svg>
     </>
+  )
+}
+
+/**
+ * Part-to-whole by market value. Every slice is directly labelled in the
+ * legend beside it — which is also the relief that lets the lighter
+ * categorical slots be used on a light surface — and both the slice and its
+ * legend row link through to the position.
+ */
+export function DonutChart({
+  rows,
+  total,
+}: {
+  rows: { label: string; value: number; share: number; href?: string }[]
+  total: number
+}) {
+  if (rows.length === 0) {
+    return <p className="card-note">Nothing to allocate yet.</p>
+  }
+
+  const CX = 95
+  const CY = 95
+  const R_OUT = 88
+  const R_IN = 55
+
+  let angle = -Math.PI / 2 // start at 12 o'clock
+
+  const slices = rows.map((row, index) => {
+    const sweep = row.share * Math.PI * 2
+    const start = angle
+    const end = angle + sweep
+    angle = end
+
+    const x0 = CX + R_OUT * Math.cos(start)
+    const y0 = CY + R_OUT * Math.sin(start)
+    const x1 = CX + R_OUT * Math.cos(end)
+    const y1 = CY + R_OUT * Math.sin(end)
+    const x2 = CX + R_IN * Math.cos(end)
+    const y2 = CY + R_IN * Math.sin(end)
+    const x3 = CX + R_IN * Math.cos(start)
+    const y3 = CY + R_IN * Math.sin(start)
+    const large = sweep > Math.PI ? 1 : 0
+
+    // A single holding at 100% cannot be drawn as an arc — start and end
+    // coincide, so the path collapses to nothing. Draw two half-rings.
+    const d =
+      row.share >= 0.9999
+        ? `M${CX - R_OUT},${CY} A${R_OUT},${R_OUT} 0 1 1 ${CX + R_OUT},${CY} A${R_OUT},${R_OUT} 0 1 1 ${CX - R_OUT},${CY} Z ` +
+          `M${CX - R_IN},${CY} A${R_IN},${R_IN} 0 1 0 ${CX + R_IN},${CY} A${R_IN},${R_IN} 0 1 0 ${CX - R_IN},${CY} Z`
+        : `M${x0.toFixed(2)},${y0.toFixed(2)} ` +
+          `A${R_OUT},${R_OUT} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} ` +
+          `L${x2.toFixed(2)},${y2.toFixed(2)} ` +
+          `A${R_IN},${R_IN} 0 ${large} 0 ${x3.toFixed(2)},${y3.toFixed(2)} Z`
+
+    return { ...row, d, colorVar: `--series-${(index % 7) + 1}` }
+  })
+
+  return (
+    <div className="donut-layout">
+      <svg
+        className="donut-svg"
+        viewBox="0 0 190 190"
+        role="img"
+        aria-label={`Allocation by market value: ${rows
+          .map((row) => `${row.label} ${(row.share * 100).toFixed(1)} percent`)
+          .join(', ')}`}
+      >
+        {slices.map((slice) => {
+          const path = (
+            <path
+              className="donut-slice"
+              d={slice.d}
+              fill={`var(${slice.colorVar})`}
+              fillRule="evenodd"
+            />
+          )
+          // Plain anchor rather than next/link: inside an SVG the element is
+          // created in the SVG namespace, where the router's click handling
+          // does not apply.
+          return slice.href ? (
+            <a href={slice.href} key={slice.label}>
+              {path}
+            </a>
+          ) : (
+            <g key={slice.label}>{path}</g>
+          )
+        })}
+        <text className="donut-center-value" x={CX} y={CY - 2}>
+          {moneyCompact(total)}
+        </text>
+        <text className="donut-center-label" x={CX} y={CY + 13}>
+          Market value
+        </text>
+      </svg>
+
+      <div className="donut-legend">
+        {slices.map((slice) => {
+          const inner = (
+            <>
+              <span className="sym">
+                <span
+                  className="swatch"
+                  style={{ background: `var(${slice.colorVar})` }}
+                  aria-hidden="true"
+                />
+                {slice.label}
+              </span>
+              <span className="val">{money(slice.value)}</span>
+              <span className="pct">{(slice.share * 100).toFixed(1)}%</span>
+            </>
+          )
+          return slice.href ? (
+            <Link className="donut-row" href={slice.href} key={slice.label}>
+              {inner}
+            </Link>
+          ) : (
+            <div className="donut-row" key={slice.label}>
+              {inner}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Diverging bars for P/L %, growing left or right from a shared zero line.
+ *
+ * Colour is the status ramp rather than a categorical slot — gain and loss are
+ * states, not series identities. Sign is never carried by colour alone: it is
+ * in the signed value label and in which side of the zero line the bar sits on.
+ */
+export function PLBars({
+  rows,
+}: {
+  rows: { label: string; value: number; href?: string }[]
+}) {
+  if (rows.length === 0) {
+    return <p className="card-note">No positions to compare yet.</p>
+  }
+
+  const widest = Math.max(...rows.map((row) => Math.abs(row.value)), 0.0001)
+
+  return (
+    <div>
+      {rows.map((row) => {
+        const positive = row.value >= 0
+        // Half the track is available on each side of the zero line.
+        const width = (Math.abs(row.value) / widest) * 50
+        const inner = (
+          <>
+            <span className="plbar-sym">{row.label}</span>
+            <span className="plbar-track">
+              <span className="plbar-zero" />
+              <span
+                className={`plbar-fill ${positive ? 'pos' : 'neg'}`}
+                style={{ width: `${width}%` }}
+              />
+            </span>
+            <span className={`plbar-value ${positive ? 'up' : 'down'}`}>
+              {signedPercent(row.value)}
+            </span>
+          </>
+        )
+        return row.href ? (
+          <Link className="plbar-row" href={row.href} key={row.label}>
+            {inner}
+          </Link>
+        ) : (
+          <div className="plbar-row" key={row.label}>
+            {inner}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

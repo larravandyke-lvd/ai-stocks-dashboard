@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { AllocationBars } from '@/components/charts'
+import { AllocationBars, DonutChart, PLBars } from '@/components/charts'
 import TradeConfirmationUpload from '@/components/TradeConfirmationUpload'
 import { airtableConfigured } from '@/lib/airtable'
 import { finnhubConfigured } from '@/lib/finnhub'
@@ -65,15 +65,95 @@ export default async function OverviewPage() {
     (order) => (order.status || 'Open').toLowerCase() === 'open'
   )
 
+  // Allocation by position, used by both the donut and the concentration check.
+  const byPosition = active
+    .filter((holding) => holding.marketValue !== null && holding.marketValue > 0)
+    .map((holding) => ({
+      label: holding.ticker,
+      value: holding.marketValue as number,
+      share:
+        totals.marketValue > 0
+          ? (holding.marketValue as number) / totals.marketValue
+          : 0,
+      href: `/stock/${holding.ticker}`,
+    }))
+    .sort((a, b) => b.value - a.value)
+
+  // 25% is the "worth naming" line, 30% the "this dominates the portfolio" one.
+  const CONCENTRATION_WARN = 0.25
+  const CONCENTRATION_SEVERE = 0.3
+  const concentrated = byPosition.filter((row) => row.share >= CONCENTRATION_WARN)
+  const severe = concentrated.some((row) => row.share >= CONCENTRATION_SEVERE)
+
+  const plRows = active
+    .filter((holding) => holding.unrealizedPlPct !== null)
+    .map((holding) => ({
+      label: holding.ticker,
+      value: holding.unrealizedPlPct as number,
+      href: `/stock/${holding.ticker}`,
+    }))
+    .sort((a, b) => b.value - a.value)
+
   return (
     <>
       <header className="masthead">
         <h1>AI Stocks</h1>
         <span className="meta">
           {active.length} positions · {lots.length} lots · {openOrders.length} open
-          orders
+          orders ·{' '}
+          {snapshot.written.length > 0
+            ? `${snapshot.written.length} snapshot${snapshot.written.length === 1 ? '' : 's'} written`
+            : `snapshots current to ${snapshot.date}`}
         </span>
       </header>
+
+      {concentrated.length > 0 && (
+        <div className={`callout${severe ? ' severe' : ''}`} role="status">
+          <svg
+            className="callout-icon"
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M10 2.5 18.5 17.5H1.5L10 2.5Z"
+              stroke={severe ? 'var(--critical)' : 'var(--warning)'}
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10 8v4"
+              stroke={severe ? 'var(--critical)' : 'var(--warning)'}
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <circle
+              cx="10"
+              cy="14.8"
+              r="0.95"
+              fill={severe ? 'var(--critical)' : 'var(--warning)'}
+            />
+          </svg>
+          <div>
+            <h3>
+              {concentrated.length === 1
+                ? `${concentrated[0].label} is ${(concentrated[0].share * 100).toFixed(1)}% of the portfolio`
+                : `${concentrated.length} positions exceed ${CONCENTRATION_WARN * 100}% of the portfolio`}
+            </h3>
+            <p>
+              {concentrated.map((row, index) => (
+                <span key={row.label}>
+                  {index > 0 && ', '}
+                  <Link href={row.href}>{row.label}</Link> at{' '}
+                  {(row.share * 100).toFixed(1)}% ({money(row.value)})
+                </span>
+              ))}
+              . A single position this size drives the portfolio&rsquo;s return
+              more than every other holding combined.
+            </p>
+          </div>
+        </div>
+      )}
 
       {snapshot.error && (
         <div className="notice error">
@@ -86,7 +166,16 @@ export default async function OverviewPage() {
         <div className="stat">
           <div className="label">Market value</div>
           <div className="value">{money(totals.marketValue)}</div>
-          <div className="sub">{money(totals.costBasis)} cost basis</div>
+          <div className={`sub ${toneFor(totals.dayChangeValue)}`}>
+            {signedMoney(totals.dayChangeValue)} today
+          </div>
+        </div>
+        <div className="stat">
+          <div className="label">Cost basis</div>
+          <div className="value">{money(totals.costBasis)}</div>
+          <div className="sub">
+            {active.length} position{active.length === 1 ? '' : 's'}
+          </div>
         </div>
         <div className="stat">
           <div className="label">Unrealized P/L</div>
@@ -99,25 +188,28 @@ export default async function OverviewPage() {
         </div>
         <div className="stat">
           <div className="label">Today</div>
-          <div className={`value ${toneFor(totals.dayChangeValue)}`}>
-            {signedMoney(totals.dayChangeValue)}
-          </div>
-          <div className={`sub ${toneFor(totals.dayChangePct)}`}>
+          <div className={`value ${toneFor(totals.dayChangePct)}`}>
             {signedPercent(totals.dayChangePct)}
           </div>
-        </div>
-        <div className="stat">
-          <div className="label">Snapshot</div>
-          <div className="value" style={{ fontSize: 18 }}>
-            {snapshot.written.length > 0
-              ? `${snapshot.written.length} written`
-              : 'Up to date'}
+          <div className={`sub ${toneFor(totals.dayChangeValue)}`}>
+            {signedMoney(totals.dayChangeValue)}
           </div>
-          <div className="sub">{snapshot.date}</div>
         </div>
       </div>
 
       <div className="grid grid-2">
+        <div className="card">
+          <h2>Allocation by position</h2>
+          <DonutChart rows={byPosition} total={totals.marketValue} />
+        </div>
+
+        <div className="card">
+          <h2>Unrealized P/L % by ticker</h2>
+          <PLBars rows={plRows} />
+        </div>
+      </div>
+
+      <div className="grid grid-2" style={{ marginTop: 18 }}>
         <div className="card">
           <h2>Allocation by theme</h2>
           <AllocationBars
