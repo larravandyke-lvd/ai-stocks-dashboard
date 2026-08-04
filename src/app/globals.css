@@ -1,0 +1,715 @@
+/*
+ * Design tokens.
+ *
+ * Colours come from a validated categorical palette — the series slots were
+ * run through the six-check validator (lightness band, chroma floor, CVD
+ * separation, normal-vision floor, contrast) in BOTH modes before being used.
+ * Do not substitute a hue by eye; re-run the validator if these change.
+ *
+ * Dark mode is a selected set of steps for the dark surface, not an inverted
+ * copy of the light one.
+ */
+
+:root {
+  color-scheme: light;
+
+  --plane: #f9f9f7;
+  --surface: #fcfcfb;
+
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+
+  /* Categorical slots, fixed order. Never cycled, never reassigned by rank. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+
+  /* Status. Reserved — never reused as "series 6". */
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --warning: #fab219;
+
+  /* Delta text. Distinct from the series green so a gain never impersonates
+     a data series. */
+  --up: #006300;
+  --down: #b02c2c;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+
+    --up: #0ca30c;
+    --down: #e66767;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+
+  --up: #0ca30c;
+  --down: #e66767;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 20px 14px 48px;
+  }
+}
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.masthead h1 {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.masthead .meta {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------- cards ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.card + .card {
+  margin-top: 18px;
+}
+
+.card h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+}
+
+.card-note {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+@media (min-width: 860px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid-hero {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+/* ---------- stat tiles ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.stat {
+  background: var(--surface);
+  padding: 16px 18px;
+}
+
+.stat .label {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.stat .value {
+  font-size: 24px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.stat .sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.hero-value {
+  font-size: 40px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+/* Delta ink. Never the series colours — a gain must not read as "series 3". */
+.up {
+  color: var(--up);
+}
+.down {
+  color: var(--down);
+}
+.flat {
+  color: var(--text-secondary);
+}
+
+/* ---------- tables ---------- */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 -20px -18px;
+  padding: 0 20px 18px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 12px 8px 0;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--grid);
+}
+
+td {
+  padding: 11px 12px 11px 0;
+  border-bottom: 1px solid var(--grid);
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td.primary {
+  color: var(--text-primary);
+  font-weight: 550;
+}
+
+/* Columns of figures align on the decimal; standalone values do not. */
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+th.num {
+  padding-right: 0;
+}
+
+tr.row-link:hover td {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.ticker-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ticker-cell .sym {
+  font-weight: 640;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.ticker-cell .name {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- badges & swatches ---------- */
+
+.badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 550;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 7px;
+  vertical-align: baseline;
+  /* 2px surface ring keeps adjacent marks from fusing. */
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* ---------- legend ---------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---------- allocation bars ---------- */
+
+.alloc-row + .alloc-row {
+  margin-top: 14px;
+}
+
+.alloc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 5px;
+  font-size: 13.5px;
+}
+
+.alloc-head .label {
+  color: var(--text-primary);
+  font-weight: 550;
+}
+
+.alloc-head .figures {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.alloc-track {
+  height: 8px;
+  background: var(--grid);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.alloc-fill {
+  height: 100%;
+  /* 4px rounded data-end, anchored square to the baseline. */
+  border-radius: 0 4px 4px 0;
+  min-width: 3px;
+}
+
+/* ---------- charts ---------- */
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart .gridline {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.chart .axis-line {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+.chart .zero-line {
+  stroke: var(--axis);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart .tick {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .series-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart .direct-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.chart .lot-marker {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart .lot-label {
+  fill: var(--text-secondary);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* Hover layer: one band per x-position, tooltip driven by CSS only so the
+   chart stays a server component with no hydration cost. */
+.chart .hover-band {
+  fill: transparent;
+}
+
+.chart .hover-band:hover ~ .hover-group,
+.chart .hover-group:hover {
+  opacity: 1;
+}
+
+.chart .hover-group {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease-out;
+}
+
+.chart .crosshair {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+.chart .tip-box {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart .tip-text {
+  fill: var(--text-primary);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .tip-muted {
+  fill: var(--text-secondary);
+  font-size: 10.5px;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border: 1px dashed var(--axis);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* ---------- detail page ---------- */
+
+.backlink {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.backlink:hover {
+  color: var(--text-primary);
+}
+
+.thesis {
+  white-space: pre-wrap;
+  color: var(--text-primary);
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.news-item {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--grid);
+}
+
+.news-item:last-child {
+  border-bottom: none;
+}
+
+.news-item a {
+  color: var(--text-primary);
+  font-weight: 550;
+  font-size: 14px;
+}
+
+.news-item a:hover {
+  text-decoration: underline;
+}
+
+.news-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.rec-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  gap: 2px;
+  background: var(--grid);
+}
+
+.rec-seg {
+  height: 100%;
+}
+
+/* ---------- upload widget ---------- */
+
+.dropzone {
+  border: 1.5px dashed var(--axis);
+  border-radius: var(--radius-sm);
+  padding: 26px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  width: 100%;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: var(--series-1);
+  background: color-mix(in srgb, var(--series-1) 6%, transparent);
+}
+
+.dropzone:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.parsed {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+.parsed h3 {
+  font-size: 13px;
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.field-row label {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.field-row input,
+.field-row select {
+  background: var(--plane);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+button.primary,
+button.ghost {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+button.primary {
+  background: var(--series-1);
+  color: #fff;
+}
+
+button.ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.notice {
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.notice.error {
+  border-color: color-mix(in srgb, var(--critical) 45%, transparent);
+  color: var(--text-primary);
+}
+
+.notice.ok {
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+  color: var(--text-primary);
+}
+
+.notice strong {
+  color: var(--text-primary);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+}
