@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { AllocationBars, DonutChart, PLBars } from '@/components/charts'
+import SignOut from '@/components/SignOut'
 import TradeConfirmationUpload from '@/components/TradeConfirmationUpload'
 import { airtableConfigured } from '@/lib/airtable'
 import { finnhubConfigured } from '@/lib/finnhub'
@@ -104,6 +105,8 @@ export default async function OverviewPage() {
           {snapshot.written.length > 0
             ? `${snapshot.written.length} snapshot${snapshot.written.length === 1 ? '' : 's'} written`
             : `snapshots current to ${snapshot.date}`}
+          {' · '}
+          <SignOut />
         </span>
       </header>
 
