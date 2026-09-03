@@ -99,6 +99,14 @@ export default async function OverviewPage() {
     <>
       <header className="masthead">
         <h1>AI Stocks</h1>
+        <a
+          href="https://portals-gateway.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}
+        >
+          🔗 Portals Menu
+        </a>
         <span className="meta">
           {active.length} positions · {lots.length} lots · {openOrders.length} open
           orders ·{' '}
