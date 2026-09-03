@@ -1,0 +1,13 @@
+{
+  "name": "AI Stocks",
+  "short_name": "AI Stocks",
+  "description": "Private portfolio dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1420",
+  "theme_color": "#4c7fd1",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
