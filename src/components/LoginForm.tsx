@@ -51,7 +51,10 @@ export default function LoginForm() {
     <div className="gate">
       <form className="gate-card" onSubmit={submit}>
         <div className="gate-mark" aria-hidden="true">
-          ◆
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3,17 9,11 13,15 21,6" />
+            <polyline points="21,11 21,6 16,6" />
+          </svg>
         </div>
         <h1>AI Stocks</h1>
         <p className="gate-sub">Private portfolio dashboard</p>
