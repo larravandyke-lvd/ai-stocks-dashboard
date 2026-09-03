@@ -103,9 +103,10 @@ export default async function OverviewPage() {
           href="https://portals-gateway.vercel.app"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}
+          style={{ fontSize: '12px', fontWeight: 700, color: '#4c7fd1', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Georgia,serif' }}
         >
-          🔗 Portals Menu
+          <svg width="18" height="18" viewBox="0 0 64 64"><defs><linearGradient id="pmg1" x1="4" y1="2" x2="60" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#f6e3b4"/><stop offset=".5" stopColor="#c9a24b"/><stop offset="1" stopColor="#7a5a35"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#pmg1)"/><circle cx="32" cy="32" r="26" fill="none" stroke="#1b1207" strokeOpacity=".28" strokeWidth="1.5"/><text x="32" y="43" fontFamily="Georgia,serif" fontStyle="italic" fontWeight="700" fontSize="30" fill="#1b1207" textAnchor="middle">V</text></svg>
+          Portal Menu
         </a>
         <span className="meta">
           {active.length} positions · {lots.length} lots · {openOrders.length} open
